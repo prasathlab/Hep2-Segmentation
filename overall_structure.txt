@@ -1,0 +1,16 @@
+
+
+ Structure the HEP-2 project
+1. Module to create training, test and validation sets.
+2. From the training and validation sets extract random patches. Save the patches in a numpy file
+3. Create a UNET-Model (vanilla) and train it. Save the validation and train history.
+4. From the test set, extract ordered overlapping patches. Do prediction on each patch and stitch the image back
+5. Compute metrics, save examples etc.
+
+
+Thought:
+ Option 1: Separate the train and test scripts. But then run them sequentially from the bat file.
+
+ Option 2: Setup the entire stuff as a class.
+           So the class will include train and test methods and the attributes needed to run these methods.
+           I have decided to try this approach. Lets see how it goes.
