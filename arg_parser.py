@@ -3,6 +3,12 @@ import argparse
 def get_parser():
     train_parser = argparse.ArgumentParser(allow_abbrev=False, description='Get inputs for Classification Pipeline')
     # Add the arguments
+    train_parser.add_argument('--yaml',
+                              dest='yaml_file',
+                              required=True,
+                              type=str,
+                              help='Path to yaml file'
+                              )
     train_parser.add_argument('--base_res_dir',
                               dest='base_res_dir',
                               required=True,

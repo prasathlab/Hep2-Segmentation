@@ -10,7 +10,7 @@ project:
   task: Segmentation
   results: /data/aronow/Balaji_Iyer/Projects/Hep-2_Segmentation/Results
   run_name: Exp-1.Trial Run-1
-  arch: Vanilla UNet
+  arch: Res_U-Net
   note: In this run, image patches of size 256x256 are extracted.
 
 
@@ -23,6 +23,7 @@ prepare_data:
   train_data: /data/aronow/Balaji_Iyer/Projects/Hep-2_Segmentation/raw_data/train_data.tsv
   val_data: /data/aronow/Balaji_Iyer/Projects/Hep-2_Segmentation/raw_data/val_data.tsv
   test_data: /data/aronow/Balaji_Iyer/Projects/Hep-2_Segmentation/raw_data/test_data.tsv
+  full_data: /data/aronow/Balaji_Iyer/Projects/Hep-2_Segmentation/raw_data/all_paired_names.tsv
   extract_patches: True
   n_patches_per_img: 7
   patch_dim: !!python/tuple [256, 256] #patch_dim must always be square images.
@@ -41,13 +42,13 @@ train:
   valid_ratio: 0.3
   batch_size: 64
   n_channels: 1
-  num_epochs: 25
-  steps_per_epoch: 32
+  num_epochs: 25 #25
+  steps_per_epoch: 32 #32
   validate_interval: 1
   learning_rate: 1e-4
   loss : binary_crossentropy #1. bce 2. soft dice loss 3. alpha*bce + (1-alpha)*soft_dice_loss 0<alpha<1
   optimizer: Adam
-#
+
 val:
   input_file: /data/aronow/Balaji_Iyer/Projects/Hep-2_Segmentation/Prepared_Data/data_npy_D_256/val_imgs_patches_D_256.npy
   mask_file: /data/aronow/Balaji_Iyer/Projects/Hep-2_Segmentation/Prepared_Data/data_npy_D_256/val_masks_patches_D_256.npy
@@ -58,6 +59,7 @@ val:
 
 
 test:
+
   test_data: /data/aronow/Balaji_Iyer/Projects/Hep-2_Segmentation/raw_data/test_data.tsv
 #  input_file: /data/aronow/Balaji_Iyer/Projects/LSTM_Unet/ISIC_2018/Data/Prepared_Training_Data/data_npy_D_256/test_imgs_resize_D_256.npy
 #  mask_file: /data/aronow/Balaji_Iyer/Projects/LSTM_Unet/ISIC_2018/Data/Prepared_Training_Data/data_npy_D_256/test_masks_resize_D_256.npy
@@ -65,8 +67,8 @@ test:
 #  mask_dir: /data/aronow/Balaji_Iyer/Projects/LSTM_Unet/ISIC_2018/Data/Prepared_Training_Data/data_npy_D_256/Test_Masks
   normalization_params: /data/aronow/Balaji_Iyer/Projects/Hep-2_Segmentation/Prepared_Data/image_params.tsv
   probability_threshold: 0.5
-  n_vis_imgs: 5
-  n_rand_imgs: 5
+  n_vis_imgs: 15
+  n_rand_imgs: 40
   class_labels: {0: "Non Cell Region", 1: "Cell Region"}
   target_names: ["Non Cell Region", "Cell Region"]
   labels: [0, 1]

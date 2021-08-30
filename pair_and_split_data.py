@@ -5,7 +5,7 @@ import psutil
 import pdb
 
 pdb.set_trace()
-yaml_file = r"/data/aronow/Balaji_Iyer/Projects/Hep-2_Segmentation/src/configs/exp1_cluster.yaml"
+yaml_file = r"/data/aronow/Balaji_Iyer/Projects/Hep-2_Segmentation/src/configs/exp1_cluster_res_unet.yaml"
 with open(yaml_file, 'r') as stream:
     try:
         cfg = yaml.load(stream)

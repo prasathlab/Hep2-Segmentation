@@ -1,38 +1,23 @@
 
 from __future__ import division
-#os.environ["CUDA_VISIBLE_DEVICES"] = "0"
-import os
 import sys
-from models.vanilla_unet import get_vanilla_unet_model
-import numpy as np
-
 from keras.callbacks import ModelCheckpoint, TensorBoard,ReduceLROnPlateau, EarlyStopping
-from time import time
-from keras import callbacks
-from keras.utils import plot_model
 from keras.optimizers import Adam
-import datetime
-import pandas as pd
 import yaml
-
 import glob
 import matplotlib.pyplot as plt
 plt.style.use('ggplot')
-
-import psutil
 import tensorflow as tf
 from train_utils import *
 from perf_utils import *
 from file_utils import *
-from sklearn.metrics import (roc_curve, roc_auc_score, confusion_matrix,
-                             precision_recall_curve, jaccard_score, f1_score)
 from arg_parser import *
 from image_utils import *
 from collections import OrderedDict
 from vis_utils import *
 import json
+from constants import *
 import pdb
-
 
 class HEP2_app:
     def __init__(self, yaml_filepath, sys_argv=None):
@@ -93,13 +78,18 @@ class HEP2_app:
             self.__load_test_data()
             self.threshold_confusion = float(self.cfg["test"]["threshold_confusion"])
 
+
         self.__init_callbacks()
 
+        self.arch_name = self.cfg["project"]["arch"]
+        assert(self.arch_name in Supported_Archs)
         if self.use_train_generator:
             train_batch, _ = next(self.train_gen)
-            self.model = get_vanilla_unet_model(input_shape=train_batch.shape[1:])
+            self.model = Supported_Archs[self.arch_name](input_shape=train_batch.shape[1:])
+
         else:
-            self.model = get_vanilla_unet_model(input_shape=self.train_imgs.shape[1:])
+            self.model = Supported_Archs[self.arch_name](input_shape=self.train_imgs.shape[1:])
+            #self.model = get_vanilla_unet_model(input_shape=self.train_imgs.shape[1:])
 
         self.model.compile(optimizer=Adam(lr=self.lr), loss=self.loss, metrics=['accuracy'])
         self.model.summary()
@@ -163,7 +153,10 @@ class HEP2_app:
         # pdb.set_trace()
         # self.test_df = temp_df
 
-
+    # def __load_full_data(self):
+    #     assert (self.cfg["prepare_data"]["stride_dim"][0] < self.cfg["prepare_data"]["patch_dim"][0])
+    #     if self.cfg["prepare_data"]["extract_patches"]:
+    #         self.full_test_df = pd.read_csv(self.cfg["prepare_data"]["full_data"], sep="\t", index_col=0)
 
     def train_model(self):
 
@@ -211,8 +204,15 @@ class HEP2_app:
                 img_path = row["imageNames"]
                 mask_path = row["maskNames"]
                 img_name = os.path.basename(img_path)
-                test_img = cv2.imread(img_path, flags=cv2.IMREAD_UNCHANGED)
+                if img_name == "00252_p2.tif":
+                    # image: 00252_p2.tif shape=(1040, 1388,4).
+                    # this is weird and unexpected, hence, changing it to grayscale
+                    test_img = cv2.imread(img_path, flags=cv2.IMREAD_GRAYSCALE)
+
+                else:
+                    test_img = cv2.imread(img_path, flags=cv2.IMREAD_UNCHANGED)
                 test_mask = cv2.imread(mask_path, flags=cv2.IMREAD_UNCHANGED)
+                print(f"{img_name}, img: {test_img.shape}, mask: {test_mask.shape}")
                 test_img, test_mask = image_mask_scaling(test_img, test_mask)
                 test_img = (test_img - self.ch_mean) / self.ch_std
                 if test_img.ndim ==2:

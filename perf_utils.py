@@ -80,7 +80,7 @@ def compute_perf_metrics(test_masks, test_predictions, labels, target_names, thr
     #In binary classification, recall of the negative class is “specificity”.
     res_dict["Specificity"] = report_dict[target_names[0]]["recall"]
     # In binary classification, recall of the positive class is also known as “sensitivity”;
-    res_dict["Sensitivity"] = report_dict[target_names[0]]["recall"]
+    res_dict["Sensitivity"] = report_dict[target_names[1]]["recall"]
     #We care only about Precision of Positive Class
     res_dict["Precision"] = report_dict[target_names[1]]["precision"]
     #F1 score
