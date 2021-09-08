@@ -17,35 +17,33 @@ if __name__ == '__main__':
     print(f"yaml_file path = {yaml_file}")
     #cfg = read_yaml(yaml_file)
 
-hep2 = HEP2_app(yaml_file)
-print("Hep2 Initialization Done")
-
-hep2.train_model()
-print("Model Training Done")
-
-hep2.model_predict_by_patches()
-print("Model Prediction Done")
-
-hep2.evaluate_model()
-print("Model Evaluation Done")
-
-hep2.visualize_model()
-print("Model Visualization Done")
+    hep2 = HEP2_app(yaml_file)
+    print("Hep2 Initialization Done")
 
 
-#To run the model on the entire dataset
-print("Running Test for All 1008 Images")
-hep2.test_dir = os.path.join(hep2.exp_dir, "All_1008")
-os.makedirs(hep2.test_dir, exist_ok=True)
+    hep2.train_model()
+    print("Model Training Done")
 
-all_data = r"/data/aronow/Balaji_Iyer/Projects/Hep-2_Segmentation/raw_data/all_paired_names.tsv"
-hep2.test_df = pd.read_csv(all_data, sep="\t", index_col=0)
-#Only for dev
-#hep2.test_df = hep2.test_df.iloc[320:340,:]
-print("Running Model Prediction for All 1008 Images")
+    hep2.model_predict_by_patches()
+    print("Model Prediction Done")
 
-hep2.model_predict_by_patches()
-print("Running Model Evaluation for All 1008 Images")
+    hep2.evaluate_model()
+    print("Model Evaluation Done")
 
-hep2.evaluate_model()
-print("All Tasks Done")
+    hep2.visualize_model()
+    print("Model Visualization Done")
+
+    #To run the model on the entire dataset
+    print("Running Test for All 1008 Images")
+    hep2.test_dir = os.path.join(hep2.exp_dir, "All_1008")
+    os.makedirs(hep2.test_dir, exist_ok=True)
+
+    all_data = r"/data/aronow/Balaji_Iyer/Projects/Hep-2_Segmentation/raw_data/all_paired_names.tsv"
+    hep2.test_df = pd.read_csv(all_data, sep="\t", index_col=0)
+
+    print("Running Model Prediction for All 1008 Images")
+    hep2.model_predict_by_patches()
+
+    print("Running Model Evaluation for All 1008 Images")
+    hep2.evaluate_model()
+    print("All Tasks Done")

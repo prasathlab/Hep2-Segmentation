@@ -1,0 +1,78 @@
+# NOTE: it is best to use absolute paths
+# If you must use relative paths, they are relative
+# to run.py, not the config file
+
+seed: 121
+
+project:
+  name: Hep-2 Cell Segmentation
+  dataset: Hep-2 data
+  task: Segmentation
+  results: /data/aronow/Balaji_Iyer/Projects/Hep-2_Segmentation/Results/Trial_Runs
+  run_name: Exp-1.Trial Run-1
+  arch: fcn_8_vgg
+  note: In this run, image patches of size 256x256 are extracted.
+
+
+pair_and_split_data:
+  data_dir: /data/aronow/Balaji_Iyer/Projects/Hep-2_Segmentation/raw_data/train
+  test_ratio: 0.3
+  val_ratio: 0.15
+
+prepare_data:
+  train_data: /data/aronow/Balaji_Iyer/Projects/Hep-2_Segmentation/raw_data/train_data.tsv
+  val_data: /data/aronow/Balaji_Iyer/Projects/Hep-2_Segmentation/raw_data/val_data.tsv
+  test_data: /data/aronow/Balaji_Iyer/Projects/Hep-2_Segmentation/raw_data/test_data.tsv
+  full_data: /data/aronow/Balaji_Iyer/Projects/Hep-2_Segmentation/raw_data/all_paired_names.tsv
+  extract_patches: True
+  n_patches_per_img: 7
+  patch_dim: !!python/tuple [256, 256] #patch_dim must always be square images.
+  stride_dim: !!python/tuple [70, 70] #stride_dim must always be square images.
+  normalize: True
+  save_as_npy: True
+  save_path: /data/aronow/Balaji_Iyer/Projects/Hep-2_Segmentation/Prepared_Data
+
+data:
+  height: 256
+  width: 256
+  n_channels: 1
+  class_labels: {0: "Non Cell Region", 1: "Cell Region"}
+  target_names: ["Non Cell Region", "Cell Region"]
+  labels: [0, 1]
+
+train:
+  input_file: /data/aronow/Balaji_Iyer/Projects/Hep-2_Segmentation/Prepared_Data/data_npy_D_256/train_imgs_patches_D_256.npy
+  mask_file: /data/aronow/Balaji_Iyer/Projects/Hep-2_Segmentation/Prepared_Data/data_npy_D_256/train_masks_patches_D_256.npy
+  image_dir: /data/aronow/Balaji_Iyer/Projects/Hep-2_Segmentation/Prepared_Data/data_npy_D_256/Train_Images
+  mask_dir: /data/aronow/Balaji_Iyer/Projects/Hep-2_Segmentation/Prepared_Data/data_npy_D_256/Train_Masks
+  train_generator: True
+  valid_ratio: 0.3
+  batch_size: 64
+  num_epochs: 25 #25
+  steps_per_epoch: 32 #32
+  validate_interval: 1
+  learning_rate: 1e-3
+  loss : binary_crossentropy #1. bce 2. soft dice loss 3. alpha*bce + (1-alpha)*soft_dice_loss 0<alpha<1
+  optimizer: Adam
+  pretrained_w: False
+  fine_tune: True
+
+val:
+  input_file: /data/aronow/Balaji_Iyer/Projects/Hep-2_Segmentation/Prepared_Data/data_npy_D_256/val_imgs_patches_D_256.npy
+  mask_file: /data/aronow/Balaji_Iyer/Projects/Hep-2_Segmentation/Prepared_Data/data_npy_D_256/val_masks_patches_D_256.npy
+  image_dir: /data/aronow/Balaji_Iyer/Projects/Hep-2_Segmentation/Prepared_Data/data_npy_D_256/Val_Images
+  mask_dir: /data/aronow/Balaji_Iyer/Projects/Hep-2_Segmentation/Prepared_Data/data_npy_D_256/Val_Masks
+  val_generator: False
+
+
+test:
+  test_data: /data/aronow/Balaji_Iyer/Projects/Hep-2_Segmentation/raw_data/test_data.tsv
+#  input_file: /data/aronow/Balaji_Iyer/Projects/LSTM_Unet/ISIC_2018/Data/Prepared_Training_Data/data_npy_D_256/test_imgs_resize_D_256.npy
+#  mask_file: /data/aronow/Balaji_Iyer/Projects/LSTM_Unet/ISIC_2018/Data/Prepared_Training_Data/data_npy_D_256/test_masks_resize_D_256.npy
+#  image_dir: /data/aronow/Balaji_Iyer/Projects/LSTM_Unet/ISIC_2018/Data/Prepared_Training_Data/data_npy_D_256/Test_Images
+#  mask_dir: /data/aronow/Balaji_Iyer/Projects/LSTM_Unet/ISIC_2018/Data/Prepared_Training_Data/data_npy_D_256/Test_Masks
+  normalization_params: /data/aronow/Balaji_Iyer/Projects/Hep-2_Segmentation/Prepared_Data/image_params.tsv
+  probability_threshold: 0.5
+  n_vis_imgs: 15
+  n_rand_imgs: 40
+  threshold_confusion: 0.5

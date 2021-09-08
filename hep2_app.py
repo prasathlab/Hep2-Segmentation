@@ -18,6 +18,8 @@ from vis_utils import *
 import json
 from constants import *
 import pdb
+from fcn_models.fcn import *
+from contextlib import redirect_stdout
 
 class HEP2_app:
     def __init__(self, yaml_filepath, sys_argv=None):
@@ -34,6 +36,36 @@ class HEP2_app:
             except yaml.YAMLError as exc:
                 print(exc)
 
+        # HyperParams
+        self.train_bs = self.cfg["train"]["batch_size"]
+        self.steps_per_epoch = self.cfg["train"]["steps_per_epoch"]
+        self.num_epochs = self.cfg["train"]["num_epochs"]
+        self.lr = float(self.cfg["train"]["learning_rate"])
+        self.loss = self.cfg["train"]["loss"]
+        self.optimizer_name = self.cfg["train"]["optimizer"]
+        self.arch_name = self.cfg["project"]["arch"]
+        self.height = self.cfg["data"]["height"]
+        self.width = self.cfg["data"]["width"]
+        self.n_channels = self.cfg["data"]["n_channels"]
+        #Currently only below shape is supported.
+        self.input_shape = (self.height, self.width, self.n_channels)
+        self.pretrained_w = self.cfg["train"]["pretrained_w"]
+        self.fine_tune = self.cfg["train"]["fine_tune"]
+        self.n_classes = len(self.cfg["data"]["labels"])
+
+        self.prefix = self.arch_name
+        if self.pretrained_w:
+            self.prefix = self.prefix + "_" + "PT"
+            if self.fine_tune:
+                self.prefix = self.prefix + "_" + "FT"
+            else:
+                self.prefix = self.prefix + "_" + "NFT"
+        else:
+            # This is just to make sure there is never a case of NPT and NFT
+            assert(not self.pretrained_w and self.fine_tune)
+            self.prefix = self.prefix + "_" + "NPT" + "_" + "FT"
+
+
         if self.args.train_model:
             self.res_dir = self.args.base_res_dir
             (self.exp_dir,
@@ -42,7 +74,7 @@ class HEP2_app:
              self.tb_dir,
              self.mdl_dir) = setup_results_dir(res_dir=self.res_dir,
                                                tb_dir="tb_log",
-                                               time_stamp=True, )
+                                               time_stamp=True, prefix=self.prefix)
             self.final_mdl_dir = os.path.join(self.mdl_dir, "Final_Model")
             os.makedirs(self.final_mdl_dir, exist_ok=True)
             self.vis_dir = os.path.join(self.test_dir, "Visualization")
@@ -61,15 +93,6 @@ class HEP2_app:
         with open(os.path.join(self.exp_dir, "run_yaml.yaml"), "w") as file:
             yaml.dump(self.cfg, file)
 
-        # HyperParams
-        self.train_bs = self.cfg["train"]["batch_size"]
-        self.steps_per_epoch = self.cfg["train"]["steps_per_epoch"]
-        self.num_epochs = self.cfg["train"]["num_epochs"]
-        self.n_channels = self.cfg["train"]["n_channels"]
-        self.lr = float(self.cfg["train"]["learning_rate"])
-        self.loss = self.cfg["train"]["loss"]
-        self.optimizer_name = self.cfg["train"]["optimizer"]
-
         if "train" in self.cfg:
             self.__load_train_data()
         if "val" in self.cfg:
@@ -78,21 +101,43 @@ class HEP2_app:
             self.__load_test_data()
             self.threshold_confusion = float(self.cfg["test"]["threshold_confusion"])
 
-
         self.__init_callbacks()
-
-        self.arch_name = self.cfg["project"]["arch"]
-        assert(self.arch_name in Supported_Archs)
-        if self.use_train_generator:
-            train_batch, _ = next(self.train_gen)
-            self.model = Supported_Archs[self.arch_name](input_shape=train_batch.shape[1:])
-
-        else:
-            self.model = Supported_Archs[self.arch_name](input_shape=self.train_imgs.shape[1:])
-            #self.model = get_vanilla_unet_model(input_shape=self.train_imgs.shape[1:])
+        self.__load_model__()
 
         self.model.compile(optimizer=Adam(lr=self.lr), loss=self.loss, metrics=['accuracy'])
         self.model.summary()
+        with open(os.path.join(self.train_dir, f'{self.model.model_name}_summary.txt'), 'w') as f:
+            with redirect_stdout(f):
+                self.model.summary()
+
+    def __load_model__(self):
+        assert(self.arch_name in Supported_Archs)
+        #height, width and channels must be supplied by yaml
+
+
+        if self.arch_name in ["Vanilla_U-Net", "Res_U-Net", "Dense_U-Net"]:
+            #This if condition will be deprecated later
+            self.model = Supported_Archs[self.arch_name](self.input_shape)
+        else:
+            backbone = any(name in self.arch_name for name in Supported_Backbones)
+            if backbone:
+
+                self.model = Supported_Archs[self.arch_name](n_classes=self.n_classes,
+                                                             input_height=self.height,
+                                                             input_width=self.width,
+                                                             channels=self.n_channels,
+                                                             pretrained_w=self.pretrained_w,
+                                                             fine_tune=self.fine_tune
+                                                             )
+            else:
+                print("Here")
+
+                self.model = Supported_Archs[self.arch_name](n_classes=self.n_classes,
+                                                             input_height=self.height,
+                                                             input_width=self.width,
+                                                             channels=self.n_channels,
+                                                             )
+
 
     def __init_callbacks(self):
         # mdl_file = os.path.join(train_dir, weights_E_{epoch:02d}_VL_{val_loss:.2f}.hdf5)
@@ -149,17 +194,12 @@ class HEP2_app:
             self.ch_std = self.norm_params_df.loc["Std", :].to_numpy()
 
         #Only during development.
-        # temp_df = self.test_df[:30]
+        # temp_df = self.test_df[:10]
         # pdb.set_trace()
         # self.test_df = temp_df
 
-    # def __load_full_data(self):
-    #     assert (self.cfg["prepare_data"]["stride_dim"][0] < self.cfg["prepare_data"]["patch_dim"][0])
-    #     if self.cfg["prepare_data"]["extract_patches"]:
-    #         self.full_test_df = pd.read_csv(self.cfg["prepare_data"]["full_data"], sep="\t", index_col=0)
 
     def train_model(self):
-
         if self.use_train_generator and "val" in self.cfg:
             history = self.model.fit(self.train_gen,
                                      steps_per_epoch=self.steps_per_epoch,
@@ -264,8 +304,8 @@ class HEP2_app:
             test_pred = self.img_pred_dict[img_name]
             all_test_preds.append(test_pred)
             res_dict, report_dict = compute_perf_metrics(test_mask, test_pred,
-                                            labels=self.cfg["test"]["labels"],
-                                            target_names=self.cfg["test"]["target_names"],
+                                            labels=self.cfg["data"]["labels"],
+                                            target_names=self.cfg["data"]["target_names"],
                                             threshold_confusion=self.threshold_confusion)
             self.full_report_dict[img_name] = report_dict
             res_df = pd.DataFrame(res_dict, index=[img_name])
@@ -279,8 +319,8 @@ class HEP2_app:
             print(json_dumps_str, file=fout)
 
         summary_res_dict, summary_report_dict = compute_perf_metrics(all_test_masks, all_test_preds,
-                                            labels=self.cfg["test"]["labels"],
-                                            target_names=self.cfg["test"]["target_names"],
+                                            labels=self.cfg["data"]["labels"],
+                                            target_names=self.cfg["data"]["target_names"],
                                             threshold_confusion=self.threshold_confusion)
 
         with open(os.path.join(self.test_dir, "summary_detail_report.json"), 'w') as fout:

@@ -110,8 +110,10 @@ def get_hep2_data(data_df):
     pdb.set_trace()
     return np.array(imgs), np.array(masks)
 
-def setup_results_dir(res_dir="./Results", tb_dir="tb_log", time_stamp=True, ):
+def setup_results_dir(res_dir="./Results", tb_dir="tb_log", time_stamp=True, prefix=None):
     time_str = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+    if prefix is not None:
+        time_str = prefix + "_" + time_str
     exp_dir = os.path.join(res_dir, time_str)
     train_dir = os.path.join(res_dir, time_str, "Train")
     os.makedirs(train_dir, exist_ok=True)
