@@ -117,3 +117,6 @@ dmypy.json
 .pyre/
 
 .DS_Store
+
+/train
+train_data.tsv
