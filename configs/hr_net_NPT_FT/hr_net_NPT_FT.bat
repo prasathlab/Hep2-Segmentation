@@ -15,7 +15,7 @@ conda activate tf-gpu
 res_dir=/data/aronow/Balaji_Iyer/Projects/Hep-2_Segmentation/Results/New_Models
 code_dir=/data/aronow/Balaji_Iyer/Projects/Hep-2_Segmentation/Hep2-Segmentation
 
-yaml_path="/data/aronow/Balaji_Iyer/Projects/Hep-2_Segmentation/Hep2-Segmentation/configs/mobilenet_unet_PT_NFT/mobilenet_unet_PT_NFT.yaml"
+yaml_path="/data/aronow/Balaji_Iyer/Projects/Hep-2_Segmentation/Hep2-Segmentation/configs/hr_net_NPT_FT/hr_net_NPT_FT.yaml"
 
 #First call the train model script
 cd ${code_dir}

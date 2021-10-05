@@ -8,7 +8,7 @@ project:
   name: Hep-2 Cell Segmentation
   dataset: Hep-2 data
   task: Segmentation
-  results: /data/aronow/Balaji_Iyer/Projects/Hep-2_Segmentation/Results/Trial_Runs
+  results: /data/aronow/Balaji_Iyer/Projects/Hep-2_Segmentation/Results/New_Models
   run_name: Exp-1.Trial Run-1
   arch: vgg_pspnet
   note: In this run, image patches of size 256x256 are extracted.

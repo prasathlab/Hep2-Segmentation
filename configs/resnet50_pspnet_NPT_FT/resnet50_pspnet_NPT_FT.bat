@@ -12,7 +12,7 @@
 source /usr/local/anaconda3-2020/etc/profile.d/conda.sh
 conda activate tf-gpu
 
-res_dir=/data/aronow/Balaji_Iyer/Projects/Hep-2_Segmentation/Results
+res_dir=/data/aronow/Balaji_Iyer/Projects/Hep-2_Segmentation/Results/New_Models
 code_dir=/data/aronow/Balaji_Iyer/Projects/Hep-2_Segmentation/Hep2-Segmentation
 
 yaml_path="/data/aronow/Balaji_Iyer/Projects/Hep-2_Segmentation/Hep2-Segmentation/configs/resnet50_pspnet_NPT_FT/resnet50_pspnet_NPT_FT.yaml"

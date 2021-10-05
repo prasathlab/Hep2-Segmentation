@@ -3,6 +3,7 @@ import random
 import os
 import pdb
 
+#instance of the RandAugment class
 def make_generator(img_files, mask_dir, batch_size):
     while 1:
         sample_idxs = random.sample(range(len(img_files)), k=batch_size)
@@ -21,6 +22,7 @@ def make_generator(img_files, mask_dir, batch_size):
         batch_imgs = np.array(batch_imgs)
         batch_masks = np.array(batch_masks)
         check = batch_imgs.shape == batch_masks.shape
+        #call RandAugment here
         yield(batch_imgs, batch_masks)
 
 def split_train_val_set(img_files, valid_ratio):

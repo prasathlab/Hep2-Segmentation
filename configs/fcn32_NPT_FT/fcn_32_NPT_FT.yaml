@@ -8,7 +8,7 @@ project:
   name: Hep-2 Cell Segmentation
   dataset: Hep-2 data
   task: Segmentation
-  results: /data/aronow/Balaji_Iyer/Projects/Hep-2_Segmentation/Results/Trial_Runs
+  results: /data/aronow/Balaji_Iyer/Projects/Hep-2_Segmentation/Results/
   run_name: Exp-1.Trial Run-1
   arch: fcn_32
   note: In this run, image patches of size 256x256 are extracted.
@@ -48,8 +48,8 @@ train:
   train_generator: True
   valid_ratio: 0.3
   batch_size: 64
-  num_epochs: 2 #25
-  steps_per_epoch: 4 #32
+  num_epochs: 25 #25
+  steps_per_epoch: 32 #32
   validate_interval: 1
   learning_rate: 1e-3
   loss : binary_crossentropy #1. bce 2. soft dice loss 3. alpha*bce + (1-alpha)*soft_dice_loss 0<alpha<1
