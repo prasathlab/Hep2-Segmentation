@@ -172,7 +172,10 @@ class HEP2_app:
             # if the config file has val key, it implies val data is available.
             # Hence, splitting data into train and val sets is not required.
             self.train_img_files = self.img_files
-            self.train_gen = make_generator(self.train_img_files, self.train_mask_dir, self.train_bs)
+            self.train_gen = make_generator(self.train_img_files,
+                                            self.train_mask_dir,
+                                            self.train_bs,
+                                            self.cfg["train"]["augment"])
 
         else:
             self.train_imgs = np.load(self.cfg["train"]["input_file"])

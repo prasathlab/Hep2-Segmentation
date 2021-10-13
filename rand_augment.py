@@ -72,6 +72,8 @@ def Identity(img, _):
 
 
 class RandAugment:
+    # n -> Number of augmentations per image
+    # m ->
     def __init__(self, n, m):
         self.n = n
         self.m = m
@@ -93,6 +95,7 @@ class RandAugment:
     def __call__(self, img, mask):
         ops = random.choices(self.augmentations, k=self.n)
         pil_img = Image.fromarray(np.squeeze(img, axis=2))
+        pil_img = pil_img.convert('L')
         pil_mask = Image.fromarray(np.squeeze(mask, axis=2))
 
         for op, minval, maxval in ops:
@@ -100,7 +103,7 @@ class RandAugment:
             val = (float(self.m) / 30) * float(maxval - minval) + minval
             pil_img = op(pil_img, val)
             pil_mask = op(pil_mask, val)
-
+        pil_img = pil_img.convert('F')
         return (np.expand_dims(np.array(pil_img), 2), np.expand_dims(np.array(pil_mask), 2))
 
 

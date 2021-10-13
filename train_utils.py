@@ -2,9 +2,13 @@ import numpy as np
 import random
 import os
 import pdb
+from rand_augment import *
+import cv2
 
 #instance of the RandAugment class
-def make_generator(img_files, mask_dir, batch_size):
+def make_generator(img_files, mask_dir, batch_size, augment=False):
+    if augment:
+        batch_size = int(batch_size//2)
     while 1:
         sample_idxs = random.sample(range(len(img_files)), k=batch_size)
         batch_imgs, batch_masks = [], []
@@ -22,8 +26,19 @@ def make_generator(img_files, mask_dir, batch_size):
         batch_imgs = np.array(batch_imgs)
         batch_masks = np.array(batch_masks)
         check = batch_imgs.shape == batch_masks.shape
-        #call RandAugment here
-        yield(batch_imgs, batch_masks)
+        if augment:
+            pdb.set_trace()
+            aug_imgs = np.zeros_like(batch_imgs)
+            aug_masks = np.zeros_like(batch_masks)
+            rand_aug = RandAugment(3, 8)
+            for idx, (img, mask) in enumerate(zip(batch_imgs, batch_masks)):
+                aug_img, aug_mask = rand_aug(img, mask)
+                aug_imgs[idx, :, :, :] = aug_img
+                aug_masks[idx, :, :, :] = aug_mask
+            batch_imgs = np.concatenate([batch_imgs, aug_imgs], axis=-1)
+            batch_masks = np.concatenate([batch_masks, aug_imgs], axis=-1)
+            pdb.set_trace()
+        return (batch_imgs, batch_masks)
 
 def split_train_val_set(img_files, valid_ratio):
     n_val_samples = int(valid_ratio*len(img_files))

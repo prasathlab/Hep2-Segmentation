@@ -37,6 +37,13 @@ pip-delete-this-directory.txt
 
 # PyCharm
 .idea
+.idea/Hep2-Segmentation.iml
+.idea/misc.xml
+.idea/modules.xml
+.idea/vcs.xml
+.idea/workspace.xml
+.idea/inspectionProfiles
+.idea/inspectionProfiles/Project_Default.xml
 
 # Unit test / coverage reports
 htmlcov/

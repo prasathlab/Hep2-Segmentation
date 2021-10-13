@@ -8,7 +8,7 @@ project:
   name: Hep-2 Cell Segmentation
   dataset: Hep-2 data
   task: Segmentation
-  results: /data/aronow/Balaji_Iyer/Projects/Hep-2_Segmentation/Results/Trial_Runs
+  results: /data/aronow/Balaji_Iyer/Projects/Hep-2_Segmentation/Results/With_Rand_Aug
   run_name: Exp-1.Trial Run-1
   arch: Vanilla_U-Net
   note: In this run, image patches of size 256x256 are extracted.
@@ -46,6 +46,7 @@ train:
   image_dir: /data/aronow/Balaji_Iyer/Projects/Hep-2_Segmentation/Prepared_Data/data_npy_D_256/Train_Images
   mask_dir: /data/aronow/Balaji_Iyer/Projects/Hep-2_Segmentation/Prepared_Data/data_npy_D_256/Train_Masks
   train_generator: True
+  augment: True
   valid_ratio: 0.3
   batch_size: 64
   num_epochs: 25 #25
