@@ -8,7 +8,7 @@ project:
   name: Hep-2 Cell Segmentation
   dataset: Hep-2 data
   task: Segmentation
-  results: /data/aronow/Balaji_Iyer/Projects/Hep-2_Segmentation/Results/New_Models
+  results: /data/aronow/Balaji_Iyer/Projects/Hep-2_Segmentation/Results/With_Rand_Aug
   run_name: Exp-1.Trial Run-1
   arch: vgg_pspnet
   note: In this run, image patches of size 256x256 are extracted.
@@ -56,6 +56,7 @@ train:
   optimizer: Adam
   pretrained_w: True
   fine_tune: False
+  augment: True
 
 val:
   input_file: /data/aronow/Balaji_Iyer/Projects/Hep-2_Segmentation/Prepared_Data/data_npy_D_256/val_imgs_patches_D_256.npy
