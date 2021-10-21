@@ -1,0 +1,15 @@
+
+
+prepare_data:
+  train_data: /data/aronow/Balaji_Iyer/Projects/Hep-2_Segmentation/Augmented_Data/train_aug.tsv
+  #val_data: /data/aronow/Balaji_Iyer/Projects/Hep-2_Segmentation/raw_data/val_data.tsv
+  #test_data: /data/aronow/Balaji_Iyer/Projects/Hep-2_Segmentation/raw_data/test_data.tsv
+  #full_data: /data/aronow/Balaji_Iyer/Projects/Hep-2_Segmentation/raw_data/all_paired_names.tsv
+  extract_patches: True
+  n_patches_per_img: 10
+  patch_dim: !!python/tuple [256, 256] #patch_dim must always be square images.
+  stride_dim: !!python/tuple [70, 70] #stride_dim must always be square images.
+  normalize: True
+  save_as_npy: True
+  normalization_params: /data/aronow/Balaji_Iyer/Projects/Hep-2_Segmentation/Prepared_Data/image_params.tsv
+  save_path: /data/aronow/Balaji_Iyer/Projects/Hep-2_Segmentation/Prepared_Data

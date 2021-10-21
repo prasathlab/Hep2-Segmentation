@@ -82,6 +82,10 @@ def image_normalization(imgs):
     imgs = (imgs - img_ch_mean) / img_ch_std
     return (imgs, img_ch_mean, img_ch_std)
 
+def get_normalization_params(imgs):
+    img_ch_mean = imgs.mean(axis=(0, 1, 2), keepdims=True)
+    img_ch_std = imgs.std(axis=(0, 1, 2), keepdims=True)
+    return (img_ch_mean, img_ch_std)
 
 def paint_border_overlap(full_imgs, patch_h, patch_w, stride_h, stride_w):
 

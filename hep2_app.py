@@ -66,6 +66,7 @@ class HEP2_app:
             self.prefix = self.prefix + "_" + "NPT" + "_" + "FT"
 
 
+
         if self.args.train_model:
             self.res_dir = self.args.base_res_dir
             (self.exp_dir,
@@ -103,9 +104,10 @@ class HEP2_app:
 
         self.__init_callbacks()
         self.__load_model__()
-
+        bce = tf.keras.losses.BinaryCrossentropy(from_logits=False)
         self.model.compile(optimizer=Adam(lr=self.lr), loss=self.loss, metrics=['accuracy'])
         self.model.summary()
+
         with open(os.path.join(self.train_dir, f'{self.model.model_name}_summary.txt'), 'w') as f:
             with redirect_stdout(f):
                 self.model.summary()
@@ -172,10 +174,24 @@ class HEP2_app:
             # if the config file has val key, it implies val data is available.
             # Hence, splitting data into train and val sets is not required.
             self.train_img_files = self.img_files
-            self.train_gen = make_generator(self.train_img_files,
-                                            self.train_mask_dir,
-                                            self.train_bs,
-                                            self.cfg["train"]["augment"])
+
+            if self.cfg["train"]["augment"]:
+                self.aug_img_files = glob.glob(self.cfg["train"]["aug_image_dir"] + "/*.npy")
+                self.aug_mask_dir = self.cfg["train"]["aug_mask_dir"]
+
+                self.train_gen = make_generator_w_aug(self.train_img_files,
+                                                      self.train_mask_dir,
+                                                      self.train_bs,
+                                                      self.aug_img_files,
+                                                      self.aug_mask_dir
+                                                      )
+
+            else:
+                pdb.set_trace()
+                self.train_gen = make_generator(self.train_img_files,
+                                                self.train_mask_dir,
+                                                self.train_bs,
+                                                )
 
         else:
             self.train_imgs = np.load(self.cfg["train"]["input_file"])
@@ -191,10 +207,11 @@ class HEP2_app:
     def __load_test_data(self):
         assert (self.cfg["prepare_data"]["stride_dim"][0] < self.cfg["prepare_data"]["patch_dim"][0])
         if self.cfg["prepare_data"]["extract_patches"]:
-            self.test_df = pd.read_csv(self.cfg["prepare_data"]["test_data"], sep="\t", index_col=0)
             self.norm_params_df = pd.read_csv(self.cfg["test"]["normalization_params"], sep="\t", index_col=0)
             self.ch_mean = self.norm_params_df.loc["Mean", :].to_numpy()
             self.ch_std = self.norm_params_df.loc["Std", :].to_numpy()
+            self.test_df = pd.read_csv(self.cfg["prepare_data"]["test_data"], sep="\t", index_col=0)
+
 
         #Only during development.
         # temp_df = self.test_df[:10]
@@ -204,6 +221,7 @@ class HEP2_app:
 
     def train_model(self):
         if self.use_train_generator and "val" in self.cfg:
+
             history = self.model.fit(self.train_gen,
                                      steps_per_epoch=self.steps_per_epoch,
                                      epochs=self.num_epochs,

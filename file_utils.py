@@ -85,7 +85,7 @@ def pair_image_mask_names(all_files):
     return (paired_df)
 
 def get_hep2_data(data_df):
-    pdb.set_trace()
+
     imgs = []
     masks = []
     idx = 0
@@ -107,7 +107,7 @@ def get_hep2_data(data_df):
         if idx % 100 == 0:
             print(f"{idx} of {data_df.shape[0]}")
         idx += 1
-    pdb.set_trace()
+
     return np.array(imgs), np.array(masks)
 
 def setup_results_dir(res_dir="./Results", tb_dir="tb_log", time_stamp=True, prefix=None):

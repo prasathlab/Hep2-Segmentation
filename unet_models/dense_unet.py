@@ -64,9 +64,13 @@ def get_dense_unet_model(input_shape,
         x = Concatenate(axis=-1)([x, conv])
         x = conv2d_layer(inbound_layer=x, filters=filters, use_batch_norm=True, dropout=dropout, padding='same')
 
+    import pdb
+    pdb.set_trace()
     outputs = Conv2D(filters=num_output_channels, kernel_size=(1, 1), activation=output_activation)(x)
 
     model = Model(inputs=[inputs], outputs=[outputs])
+    model.model_name = "Dense_U-Net"
+
     return model
 
 # debug = 1
