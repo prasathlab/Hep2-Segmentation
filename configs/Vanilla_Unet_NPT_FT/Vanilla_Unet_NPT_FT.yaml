@@ -57,6 +57,8 @@ train:
   optimizer: Adam
   pretrained_w: False
   fine_tune: True
+  aug_image_dir: /data/aronow/Balaji_Iyer/Projects/Hep-2_Segmentation/Prepared_Data/aug_data_npy_D_256/Aug_Train_Images
+  aug_mask_dir: /data/aronow/Balaji_Iyer/Projects/Hep-2_Segmentation/Prepared_Data/aug_data_npy_D_256/Aug_Train_Masks
 
 val:
   input_file: /data/aronow/Balaji_Iyer/Projects/Hep-2_Segmentation/Prepared_Data/data_npy_D_256/val_imgs_patches_D_256.npy
