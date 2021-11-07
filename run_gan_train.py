@@ -1,5 +1,6 @@
 
-from hep2_app import HEP2_app
+#from hep2_gan_app_pytorch import HEP2_GAN_app
+from hep2_gan_app_keras import HEP2_GAN_Keras_App
 import os
 import pandas as pd
 import sys
@@ -12,13 +13,17 @@ import pdb
 if __name__ == '__main__':
     sys_argv = sys.argv[1:]
     parser = get_parser()
+
     args = parser.parse_args(sys_argv)
+
     yaml_file = args.yaml_file
     print(f"yaml_file path = {yaml_file}")
     #cfg = read_yaml(yaml_file)
 
-    hep2 = HEP2_app(yaml_file)
+
+    hep2 = HEP2_GAN_Keras_App(yaml_file, args)
     print("Hep2 Initialization Done")
+
 
     hep2.train_model()
     print("Model Training Done")

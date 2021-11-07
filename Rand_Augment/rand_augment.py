@@ -1,6 +1,4 @@
 import cv2
-import pandas as pd
-from file_utils import get_hep2_data
 from PIL import Image, ImageOps, ImageEnhance
 import random
 import numpy as np
@@ -128,13 +126,13 @@ class RandAugment:
             (AutoContrast, 0, 1),
             (Rotate, 0, 30),
             (Equalize, 0, 1),
-            (Posterize, 0, 1),
+            #(Posterize, 0, 1),
             (Solarize, 0, 256),
             #(Color, 0.1, 1.9),
             (Contrast, 0.3, 2.5),
             (Rotate, 0, 30),
-            (Brightness, 0.3, 2.3),
-            (Sharpness, 0.3, 2.3),
+            (Brightness, 0.3, 2.5),
+            (Sharpness, 0.3, 2.5),
             (TranslateXabs, 0., 100),
             (TranslateYabs, 0., 100),
         ]

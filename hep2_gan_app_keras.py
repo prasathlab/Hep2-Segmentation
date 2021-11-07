@@ -20,15 +20,17 @@ from constants import *
 import pdb
 from fcn_models.fcn import *
 from contextlib import redirect_stdout
+from GANs_keras.gan_discriminator_models import *
+from tensorflow.keras.models import *
+from tensorflow.keras.layers import *
+import shutil
+import random
+from fcn_models.mobilenet import relu6
 
-class HEP2_app:
-    def __init__(self, yaml_filepath, sys_argv=None):
+class HEP2_GAN_Keras_App:
+    def __init__(self, yaml_filepath, args, sys_argv=None):
         # best to just setup the directories in the bat file and pass it via a parser.
-        if sys_argv is None:
-            sys_argv = sys.argv[1:]
-        parser = get_parser()
-        self.args = parser.parse_args(sys_argv)
-
+        self.args = args
         with open(yaml_filepath, 'r') as stream:
             try:
                 self.cfg = yaml.load(stream)
@@ -43,7 +45,8 @@ class HEP2_app:
         self.lr = float(self.cfg["train"]["learning_rate"])
         self.loss = self.cfg["train"]["loss"]
         self.optimizer_name = self.cfg["train"]["optimizer"]
-        self.arch_name = self.cfg["project"]["arch"]
+        self.gen_arch_name = self.cfg["project"]["gen_arch"]
+        self.disc_arch_name = self.cfg["project"]["disc_arch"]
         self.height = self.cfg["data"]["height"]
         self.width = self.cfg["data"]["width"]
         self.n_channels = self.cfg["data"]["n_channels"]
@@ -52,8 +55,10 @@ class HEP2_app:
         self.pretrained_w = self.cfg["train"]["pretrained_w"]
         self.fine_tune = self.cfg["train"]["fine_tune"]
         self.n_classes = len(self.cfg["data"]["labels"])
+        self.real_label = 1
+        self.fake_label = 0
 
-        self.prefix = self.arch_name
+        self.prefix = self.gen_arch_name
         if self.pretrained_w:
             self.prefix = self.prefix + "_" + "PT"
             if self.fine_tune:
@@ -64,8 +69,6 @@ class HEP2_app:
             # This is just to make sure there is never a case of NPT and NFT
             assert(not self.pretrained_w and self.fine_tune)
             self.prefix = self.prefix + "_" + "NPT" + "_" + "FT"
-
-
 
         if self.args.train_model:
             self.res_dir = self.args.base_res_dir
@@ -81,11 +84,11 @@ class HEP2_app:
             self.vis_dir = os.path.join(self.test_dir, "Visualization")
             os.makedirs(self.vis_dir, exist_ok=True)
 
-            if self.args.model_weights is not None:
-                self.model_weights = self.args.model_weights
-                #self.test_dir = self.args.test_dir
-                #self.vis_dir = os.path.join(self.test_dir, "Visualization")
-                #os.makedirs(self.vis_dir, exist_ok=True)
+        elif self.args.model_weights is not None:
+            self.model_weights = self.args.model_weights
+            self.test_dir = self.args.test_dir
+            self.vis_dir = os.path.join(self.test_dir, "Visualization")
+            os.makedirs(self.vis_dir, exist_ok=True)
 
         else:
             sys.exit("Not enough args")
@@ -103,46 +106,73 @@ class HEP2_app:
             self.threshold_confusion = float(self.cfg["test"]["threshold_confusion"])
 
         self.__init_callbacks()
+
         self.__load_model__()
         bce = tf.keras.losses.BinaryCrossentropy(from_logits=False)
-        self.model.compile(optimizer=Adam(lr=self.lr), loss=self.loss, metrics=['accuracy'])
-        self.model.summary()
 
-        with open(os.path.join(self.train_dir, f'{self.model.model_name}_summary.txt'), 'w') as f:
+        with open(os.path.join(self.train_dir, f'Generator_{self.generator_model.model_name}_summary.txt'), 'w') as f:
             with redirect_stdout(f):
-                self.model.summary()
+                self.generator_model.summary()
 
-    def __load_model__(self):
+        with open(os.path.join(self.train_dir, f'Discriminator_{self.discriminator_model.model_name}_summary.txt'),
+                  'w') as f:
+            with redirect_stdout(f):
+                self.discriminator_model.summary()
 
-        assert(self.arch_name in Supported_Archs)
-        #height, width and channels must be supplied by yaml
 
-
-        if self.arch_name in ["Vanilla_U-Net", "Res_U-Net", "Dense_U-Net"]:
-            #This if condition will be deprecated later
-            self.model = Supported_Archs[self.arch_name](self.input_shape)
+    def __get_generator_model__(self):
+        assert (self.gen_arch_name in Supported_Archs)
+        # height, width and channels must be supplied by yaml
+        if self.gen_arch_name in ["Vanilla_U-Net", "Res_U-Net", "Dense_U-Net"]:
+            # This if condition will be deprecated later
+            self.generator_model = Supported_Archs[self.gen_arch_name](self.input_shape)
         else:
-            backbone = any(name in self.arch_name for name in Supported_Backbones)
+            backbone = any(name in self.gen_arch_name for name in Supported_Backbones)
             if backbone:
-
-                self.model = Supported_Archs[self.arch_name](n_classes=self.n_classes,
-                                                             input_height=self.height,
-                                                             input_width=self.width,
-                                                             channels=self.n_channels,
-                                                             pretrained_w=self.pretrained_w,
-                                                             fine_tune=self.fine_tune
-                                                             )
+                self.generator_model = Supported_Archs[self.gen_arch_name](n_classes=self.n_classes,
+                                                                           input_height=self.height,
+                                                                           input_width=self.width,
+                                                                           channels=self.n_channels,
+                                                                           pretrained_w=self.pretrained_w,
+                                                                           fine_tune=self.fine_tune
+                                                                           )
             else:
                 print("Here")
+                self.generator_model = Supported_Archs[self.gen_arch_name](n_classes=self.n_classes,
+                                                                           input_height=self.height,
+                                                                           input_width=self.width,
+                                                                           channels=self.n_channels,
+                                                                           )
+        return self.generator_model
 
-                self.model = Supported_Archs[self.arch_name](n_classes=self.n_classes,
-                                                             input_height=self.height,
-                                                             input_width=self.width,
-                                                             channels=self.n_channels,
-                                                             )
+    def __make_composite_model__(self):
+        #TODO: ADD Identity Loss. i.e. if a mask is input to generator it must return the mask without change.
+        # make weights in the discriminator not trainable
+        self.discriminator_model.trainable = False
+        # discriminator element
+        input_gen = Input(shape=(self.height, self.width, self.n_channels))
 
-        if self.model_weights is not None:
-            self.model.load_weights(self.model_weights, by_name=True, skip_mismatch=False)
+        # Generated image to be input to d_model_1 (adversarial loss)
+        #generate mask from image. Eventually this should get close to real mask
+        generated_mask = self.generator_model(input_gen)
+        #output_d: is it real or fake
+        output_d = self.discriminator_model(generated_mask)
+        self.composite_gan_model = Model([input_gen], [output_d, generated_mask])
+
+        # compile model
+        self.composite_gan_model.compile(loss=['binary_crossentropy', 'mae'],
+                                         optimizer=Adam(lr=0.0002, beta_1=0.5),
+                                         loss_weights=[1, 100],
+                                         #metrics=['accuracy']
+                                         )
+        return self.composite_gan_model
+
+
+    def __load_model__(self):
+        self.discriminator_model = Supported_Archs[self.disc_arch_name](image_shape=(self.height, self.width, self.n_channels))
+        self.discriminator_model.compile(loss='binary_crossentropy', optimizer=Adam(lr=0.0002, beta_1=0.5), metrics=['accuracy'])
+        self.generator_model = self.__get_generator_model__()
+        self.composite_gan_model = self.__make_composite_model__()
 
 
 
@@ -201,12 +231,16 @@ class HEP2_app:
             self.train_imgs = np.load(self.cfg["train"]["input_file"])
             self.train_masks = np.load(self.cfg["train"]["mask_file"])
 
+
     def __load_val_data(self):
             #Currently, code does not support val generator. But this is a small change and can be done if needed later
             self.val_img_files = glob.glob(self.cfg["val"]["image_dir"] + "/*.npy")
             self.val_mask_dir = self.cfg["val"]["mask_dir"]
             self.val_imgs = np.load(self.cfg["val"]["input_file"])
             self.val_masks = np.load(self.cfg["val"]["mask_file"])
+            self.val_idxs = random.sample(range(self.val_imgs.shape[0]), 200)
+            self.val_imgs = self.val_imgs[self.val_idxs]
+            self.val_masks = self.val_masks[self.val_idxs]
 
     def __load_test_data(self):
         assert (self.cfg["prepare_data"]["stride_dim"][0] < self.cfg["prepare_data"]["patch_dim"][0])
@@ -215,49 +249,132 @@ class HEP2_app:
             self.ch_mean = self.norm_params_df.loc["Mean", :].to_numpy()
             self.ch_std = self.norm_params_df.loc["Std", :].to_numpy()
             self.test_df = pd.read_csv(self.cfg["prepare_data"]["test_data"], sep="\t", index_col=0)
-
-
         #Only during development.
-        # temp_df = self.test_df[:10]
-        # pdb.set_trace()
-        # self.test_df = temp_df
+            # temp_df = self.test_df[:10]
+            # pdb.set_trace()
+            # self.test_df = temp_df
+
+    def __get_gan_data_batch__(self):
+        real_imgs, real_masks = next(self.train_gen)
+        if self.disc_arch_name == "patchGAN":
+            out_shape = list(self.discriminator_model.output.shape[1:-1])
+            out_shape.insert(0, self.train_bs)
+        elif self.disc_arch_name == "basic_discriminator":
+            out_shape = [self.train_bs, 1]
+        else:
+            sys.exit("Unsupported Discriminator")
+        real_labels = self.real_label * np.ones(shape=out_shape)
+        fake_labels = self.fake_label * np.ones(shape=out_shape)
+
+        return real_imgs, real_masks, real_labels, fake_labels
+
+
+    def __train_one_epoch__(self):
+        hist_df = pd.DataFrame()
+        d_loss_real_epoch = []
+        d_loss_fake_epoch = []
+        gen_adv_loss_epoch = []
+        gen_mae_loss_epoch = []
+        for batch_idx in range(self.steps_per_epoch):
+            real_imgs, real_masks, real_labels, fake_labels = self.__get_gan_data_batch__()
+            # First Train Discriminator on Real and Fake Masks
+            d_real_hist = self.discriminator_model.train_on_batch(real_masks, real_labels, return_dict=True)
+            d_loss_real = d_real_hist["loss"]
+            d_acc_real = d_real_hist["accuracy"]
+
+            fake_gen_masks = self.generator_model(real_imgs)
+            d_fake_hist = self.discriminator_model.train_on_batch(fake_gen_masks, fake_labels,  return_dict=True)
+            d_loss_fake = d_fake_hist["loss"]
+            d_acc_fake = d_fake_hist["accuracy"]
+
+            # Then Train Generator via Composite Model on Fake Masks but with adversarial labels
+            gen_hist = self.composite_gan_model.train_on_batch([real_imgs], [real_labels, real_masks], return_dict=True)
+            gen_adv_loss = gen_hist["model_loss"]
+            gen_mae_loss = gen_hist["model_1_loss"]
+            print(f"batch_idx: {batch_idx}, d_real: {d_loss_real}, d_fake: {d_loss_fake}, adv_loss: {gen_adv_loss}, mae:{gen_mae_loss}")
+
+            #Record Various Losses
+            d_loss_real_epoch.append(d_loss_real)
+            d_loss_fake_epoch.append(d_loss_fake)
+            gen_adv_loss_epoch.append(gen_adv_loss)
+            gen_mae_loss_epoch.append(gen_mae_loss)
+            hist_df.loc[batch_idx, "d_loss_real"] = d_loss_real
+            hist_df.loc[batch_idx, "d_loss_fake"] = d_loss_fake
+            hist_df.loc[batch_idx, "gen_adv_loss"] = gen_adv_loss
+            hist_df.loc[batch_idx, "gen_mae_loss"] = gen_mae_loss
+            hist_df.loc[batch_idx, "d_acc_real"] = d_acc_real
+            hist_df.loc[batch_idx, "d_acc_fake"] = d_acc_fake
+
+        d_loss_real_mean = np.asarray(d_loss_real_epoch).mean()
+        d_loss_fake_mean = np.asarray(d_loss_fake_epoch).mean()
+        gen_adv_loss_mean = np.asarray(gen_adv_loss_epoch).mean()
+        gen_mae_loss_mean = np.asarray(gen_mae_loss_epoch).mean()
+        return (d_loss_real_mean, d_loss_fake_mean, gen_adv_loss_mean, gen_mae_loss_mean, hist_df)
+
+
+    def save_models(self, ep_idx):
+        # save the generator model
+        filename1 = f'ckpt_generator_{self.gen_arch_name}_{ep_idx}.h5'
+        self.generator_model.save_path = os.path.join(self.mdl_dir, filename1)
+        self.generator_model.save(self.generator_model.save_path)
+        print('>Saved: %s ' % filename1)
+
+
+    def __do_validation__(self):
+        val_gen_masks = self.generator_model(self.val_imgs)
+        bce = tf.keras.losses.BinaryCrossentropy(from_logits=False)
+        mae = tf.keras.losses.MeanAbsoluteError()
+        # compute val loss. Maybe do mae instead of bce
+        val_bce_loss = bce(self.val_masks, val_gen_masks).numpy()
+        val_mae_loss = mae(self.val_masks, val_gen_masks).numpy()
+        # val
+
+        res_dict, _ = compute_perf_metrics(self.val_masks, val_gen_masks,
+                                           labels=self.cfg["data"]["labels"],
+                                           target_names=self.cfg["data"]["target_names"],
+                                           threshold_confusion=self.threshold_confusion
+                                           )
+        val_dice = res_dict['Dice']
+        return (val_bce_loss, val_mae_loss, val_dice)
 
 
     def train_model(self):
-        if self.use_train_generator and "val" in self.cfg:
+        self.full_hist_df = pd.DataFrame()
+        self.val_df = pd.DataFrame()
+        for ep_idx in range(self.num_epochs):
+            d_loss_real_mean, d_loss_fake_mean, gen_adv_loss_mean, gen_mae_loss_mean, hist_df = self.__train_one_epoch__()
+            val_bce_loss, val_mae_loss, val_dice = self.__do_validation__()
 
-            history = self.model.fit(self.train_gen,
-                                     steps_per_epoch=self.steps_per_epoch,
-                                     epochs=self.num_epochs,
-                                     callbacks=self.cb_list,
-                                     validation_data=(self.val_imgs, self.val_masks),
-                                     validation_batch_size=self.train_bs,
-                                     validation_freq=1,
-                                     verbose=1
-                                     )
-        else:
-            history = self.model.fit(self.train_imgs,
-                                     self.train_masks,
-                                     batch_size=self.train_bs,
-                                     epochs=self.num_epochs,
-                                     shuffle=True,
-                                     verbose=1,
-                                     validation_split=self.cfg["train"]["valid_ratio"],
-                                     callbacks=self.cb_list
-                                     )
-        #Save the final model
-        tf.keras.models.save_model(self.model,
-                                   os.path.join(self.final_mdl_dir, "best_model.hdf5"),
-                                   overwrite=True, include_optimizer=True,
-                                   save_format="h5"
-                                   )
-        # Save the history.history dict. Useful for plotting loss etc.
-        hist_dict = history.history
-        self.hist_df = pd.DataFrame.from_dict(hist_dict)
-        self.hist_df.to_csv(os.path.join(self.train_dir, "train.tsv"), sep="\t")
-        log_train_history(hist_dict, self.train_dir)
+            self.full_hist_df = pd.concat([self.full_hist_df, hist_df], axis='index')
+            self.full_hist_df = self.full_hist_df.reset_index(drop=True)
+            print(f"epoch={ep_idx}/{self.num_epochs}, d_real: {d_loss_real_mean}, d_fake: {d_loss_fake_mean}")
+            print(f"epoch={ep_idx}/{self.num_epochs}, adv_loss: {gen_adv_loss_mean}, mae_loss: {gen_mae_loss_mean}")
+            print("\n\n")
 
+            # Save the model after every epoch
+            self.save_models(ep_idx)
+            self.val_df.loc[ep_idx, "val_bce_loss"] = val_bce_loss
+            self.val_df.loc[ep_idx, "val_mae_loss"] = val_mae_loss
+            self.val_df.loc[ep_idx, "val_dice"] = val_dice
+            self.val_df.loc[ep_idx, "Generator_Path"] = self.generator_model.save_path
+
+        #save history at end of training
+        self.full_hist_df.to_csv(os.path.join(self.train_dir, "train.tsv"), sep="\t")
+        #save the best model with highest dice coeff
+        best_row = self.val_df.iloc[self.val_df["val_dice"].argmax()]
+        shutil.copy2(src=best_row["Generator_Path"], dst=self.final_mdl_dir)
+        self.best_gen_path = best_row["Generator_Path"]
+
+
+# load the generator
+# predict the patches using the model
     def model_predict_by_patches(self):
+        #only for mobilenet
+        if 'mobilenet' in self.gen_arch_name:
+            nn_model = tf.keras.models.load_model(self.best_gen_path, custom_objects={'relu6': relu6})
+        else:
+            nn_model = tf.keras.models.load_model(self.best_gen_path)
+
         patch_height = self.cfg["prepare_data"]["patch_dim"][0]
         patch_width = self.cfg["prepare_data"]["patch_dim"][1]
         stride_height = self.cfg["prepare_data"]["stride_dim"][0]
@@ -299,7 +416,7 @@ class HEP2_app:
                                                            stride_height, stride_width
                                                            )
 
-                test_pred_patches = self.model.predict(test_img_patches)
+                test_pred_patches = nn_model.predict(test_img_patches)
                 #print(f"predicted images size : {test_pred_patches.shape}")
                 test_pred_img_overlap = recompose_overlap(test_pred_patches,
                                                           new_height, new_width,
@@ -311,8 +428,8 @@ class HEP2_app:
                 self.img_pred_dict[img_name] = test_pred_img
                 print(f"Finished Prediction for image {idx1+1} of {self.test_df.shape[0]}")
 
-    def evaluate_model(self):
 
+    def evaluate_model(self):
         all_test_preds = []
         all_test_masks = []
         self.full_report_dict = OrderedDict()

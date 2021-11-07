@@ -30,7 +30,7 @@ patch_dim = cfg["prepare_data"]["patch_dim"]
 normalize = cfg["prepare_data"]["normalize"]
 n_patches_per_img = cfg["prepare_data"]["n_patches_per_img"]
 save_path = cfg["prepare_data"]["save_path"]
-save_dir = os.path.join(save_path, f"aug_data_npy_D_{patch_dim[0]}")
+save_dir = os.path.join(save_path, f"aug_mitsp_golgi_npy_D_{patch_dim[0]}")
 os.makedirs(save_dir, exist_ok=True)
 
 #Create dirs for saving train data

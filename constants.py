@@ -6,6 +6,7 @@ from fcn_models.segnet import *
 from fcn_models.unet import *
 from fcn_models.pspnet import *
 from fcn_models.hr_net import *
+from GANs_keras.gan_discriminator_models import *
 
 Supported_Archs = {"Vanilla_U-Net": get_vanilla_unet_model,
                    "Res_U-Net": get_residual_unet_model,
@@ -29,7 +30,10 @@ Supported_Archs = {"Vanilla_U-Net": get_vanilla_unet_model,
                    "pspnet": pspnet,
                    "vgg_pspnet": vgg_pspnet,
                    "resnet50_pspnet": resnet50_pspnet,
-                   "hr_net": hr_net
+                   "hr_net": hr_net,
+                   "basic_discriminator": get_basic_discriminator,
+                   "class_conditional_discriminator": get_class_cond_discriminator,
+                   "patchGAN": get_patchgan_discriminator
 
                    }
 

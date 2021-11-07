@@ -1,7 +1,7 @@
 
 
 prepare_data:
-  train_data: /data/aronow/Balaji_Iyer/Projects/Hep-2_Segmentation/Augmented_Data/train_aug.tsv
+  train_data: /data/aronow/Balaji_Iyer/Projects/Hep-2_Segmentation/Augmented_Data/train_aug_limited.tsv
   #val_data: /data/aronow/Balaji_Iyer/Projects/Hep-2_Segmentation/raw_data/val_data.tsv
   #test_data: /data/aronow/Balaji_Iyer/Projects/Hep-2_Segmentation/raw_data/test_data.tsv
   #full_data: /data/aronow/Balaji_Iyer/Projects/Hep-2_Segmentation/raw_data/all_paired_names.tsv
