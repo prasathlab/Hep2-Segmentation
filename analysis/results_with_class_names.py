@@ -3,7 +3,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 
-results_dir_path = r"Z:\Balaji_Iyer\Projects\Hep-2_Segmentation\Results\New_Models"
+results_dir_path = r"Z:\Balaji_Iyer\Projects\Hep-2_Segmentation\Results\GAN_Models"
 res_dirs = [name for name in os.listdir(results_dir_path) if os.path.isdir(os.path.join(results_dir_path, name))]
 
 all_1008_dir = "All_1008"

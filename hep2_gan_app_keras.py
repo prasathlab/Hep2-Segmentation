@@ -26,6 +26,7 @@ from tensorflow.keras.layers import *
 import shutil
 import random
 from fcn_models.mobilenet import relu6
+from more_itertools import chunked, ichunked
 
 class HEP2_GAN_Keras_App:
     def __init__(self, yaml_filepath, args, sys_argv=None):
@@ -238,9 +239,9 @@ class HEP2_GAN_Keras_App:
             self.val_mask_dir = self.cfg["val"]["mask_dir"]
             self.val_imgs = np.load(self.cfg["val"]["input_file"])
             self.val_masks = np.load(self.cfg["val"]["mask_file"])
-            self.val_idxs = random.sample(range(self.val_imgs.shape[0]), 200)
-            self.val_imgs = self.val_imgs[self.val_idxs]
-            self.val_masks = self.val_masks[self.val_idxs]
+            # self.val_idxs = random.sample(range(self.val_imgs.shape[0]), 200)
+            # self.val_imgs = self.val_imgs[self.val_idxs]
+            # self.val_masks = self.val_masks[self.val_idxs]
 
     def __load_test_data(self):
         assert (self.cfg["prepare_data"]["stride_dim"][0] < self.cfg["prepare_data"]["patch_dim"][0])
@@ -321,7 +322,14 @@ class HEP2_GAN_Keras_App:
 
 
     def __do_validation__(self):
-        val_gen_masks = self.generator_model(self.val_imgs)
+        #all_chunks = ichunked(self.val_imgs, 20)
+        all_chunks = list(chunked(self.val_imgs, 20))
+        val_gen_masks = np.array([])
+        for chunk in all_chunks:
+            chunk_imgs = np.asarray(chunk)
+            chunk_gen_masks = self.generator_model(chunk_imgs).numpy()
+            val_gen_masks = np.vstack([val_gen_masks, chunk_gen_masks]) if val_gen_masks.size else chunk_gen_masks
+
         bce = tf.keras.losses.BinaryCrossentropy(from_logits=False)
         mae = tf.keras.losses.MeanAbsoluteError()
         # compute val loss. Maybe do mae instead of bce

@@ -2,8 +2,8 @@
 #!/bin/bash 
 #BSUB -W 80:00
 #BSUB -n 24
-#BSUB -q surya
-#BSUB -P surya
+#BSUB -q gpu-miraldi
+
 #BSUB -gpu "num=1"
 #BSUB -M 200000
 #BSUB -e /data/aronow/Balaji_Iyer/Projects/Hep-2_Segmentation/logs/%J.err

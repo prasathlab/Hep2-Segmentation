@@ -49,9 +49,9 @@ train:
   mask_dir: /data/aronow/Balaji_Iyer/Projects/Hep-2_Segmentation/Prepared_Data/data_npy_D_256/Train_Masks
   train_generator: True
   valid_ratio: 0.3
-  batch_size: 16
-  num_epochs: 25 #25
-  steps_per_epoch: 256 #32
+  batch_size: 32 #4 #16
+  num_epochs: 25 #100 #25
+  steps_per_epoch: 64 #100 #256 #32
   validate_interval: 1
   learning_rate: 1e-4
   loss : binary_crossentropy #1. bce 2. soft dice loss 3. alpha*bce + (1-alpha)*soft_dice_loss 0<alpha<1
